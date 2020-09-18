@@ -53,10 +53,20 @@ type PaymentInfo struct {
 	Preimage                   string
 	IsKeySend                  bool
 
+	LnurlPay *LnurlPayInfo
+
 	//For closed channels
 	ClosedChannelPoint  string
 	ClosedChannelStatus ChannelCloseStatus
 	ClosedChannelTxID   string
+}
+
+type LnurlPayInfo struct {
+	Repeatable      bool
+	SuccessPreamble string
+	SuccessMessage  string
+	LNURL           string
+	MetadataHash    string
 }
 
 /*

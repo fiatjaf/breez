@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"path"
@@ -689,7 +690,13 @@ func FetchLnurl(lnurl string) ([]byte, error) {
 }
 
 func WithdrawLnurl(bolt11 string) error {
+	log.Print("WITHDRAWAL FINISH ", bolt11)
 	return getBreezApp().AccountService.FinishLNURLWithdraw(bolt11)
+}
+
+func PayLnurl(amount int64) error {
+	log.Print("PAYLNURL BINDING ", amount)
+	return getBreezApp().AccountService.FinishLNURLPay(amount)
 }
 
 func NewReverseSwap(request []byte) (string, error) {

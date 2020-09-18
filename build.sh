@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # GOPATH and ANDROID_HOME needs to be set
 # gomobile & gobind needs to be installed in $GOPATH/bin
 

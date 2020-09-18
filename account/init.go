@@ -2,6 +2,7 @@ package account
 
 import (
 	"fmt"
+	"net/url"
 	"sync"
 
 	"github.com/breez/breez/config"
@@ -30,8 +31,14 @@ type Service struct {
 	log                btclog.Logger
 	daemonAPI          lnnode.API
 	onServiceEvent     func(data.NotificationEvent)
-	lnurlWithdrawing   string
 	activeParams       *chaincfg.Params
+
+	lnurlWithdrawing struct {
+		k1       string
+		callback *url.URL
+	}
+	lnurlPaying       string
+	lnurlPayTempCache map[string]lnurlPayTempData
 
 	notification *notificationRequest
 
@@ -69,13 +76,14 @@ func NewService(
 	}
 
 	return &Service{
-		cfg:            cfg,
-		log:            logBackend.Logger("ACCNT"),
-		daemonAPI:      daemonAPI,
-		breezDB:        breezDB,
-		breezAPI:       breezAPI,
-		onServiceEvent: onServiceEvent,
-		quitChan:       make(chan struct{}),
-		activeParams:   activeParams,
+		cfg:               cfg,
+		log:               logBackend.Logger("ACCNT"),
+		daemonAPI:         daemonAPI,
+		breezDB:           breezDB,
+		breezAPI:          breezAPI,
+		onServiceEvent:    onServiceEvent,
+		quitChan:          make(chan struct{}),
+		activeParams:      activeParams,
+		lnurlPayTempCache: make(map[string]lnurlPayTempData),
 	}, nil
 }

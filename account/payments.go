@@ -17,6 +17,7 @@ import (
 	"github.com/breez/breez/channeldbservice"
 	"github.com/breez/breez/data"
 	"github.com/breez/breez/db"
+	"github.com/fiatjaf/go-lnurl"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/lightningnetwork/lnd/channeldb"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -78,6 +79,15 @@ func (a *Service) GetPayments() (*data.PaymentsList, error) {
 				PayerImageURL:   payment.PayerImageURL,
 				PayerName:       payment.PayerName,
 				TransferRequest: payment.TransferRequest,
+			}
+		}
+		if payment.LnurlPay != nil {
+			paymentItem.LnurlPay = &data.LnurlPay{
+				Lnurl:           payment.LnurlPay.LNURL,
+				Repeatable:      payment.LnurlPay.Repeatable,
+				MetadataHash:    payment.LnurlPay.MetadataHash,
+				SuccessPreamble: payment.LnurlPay.SuccessPreamble,
+				SuccessMessage:  payment.LnurlPay.SuccessMessage,
 			}
 		}
 		switch payment.Type {
@@ -653,6 +663,45 @@ func (a *Service) onNewSentPayment(paymentItem *lnrpc.Payment) error {
 		paymentData.Amount = swap.OnchainAmount - swap.ClaimFee
 		paymentData.Fee += paymentItem.Value - swap.OnchainAmount + swap.ClaimFee
 	}
+
+	a.mu.Lock()
+	if lnurlpay, exists := a.lnurlPayTempCache[paymentData.PaymentHash]; exists {
+		metadataBytes := []byte(lnurlpay.metadata)
+		var metadata lnurl.Metadata
+		err := json.Unmarshal(metadataBytes, &metadata)
+		if err == nil {
+			preamble := ""
+			message := ""
+			if lnurlpay.success != nil {
+				switch lnurlpay.success.Tag {
+				case "url":
+					preamble = lnurlpay.success.Description
+					message = lnurlpay.success.URL
+				case "message":
+					message = lnurlpay.success.Message
+				case "aes":
+					preamble = lnurlpay.success.Description
+					preimageb, _ := hex.DecodeString(paymentData.Preimage)
+					message, err = lnurlpay.success.Decipher(preimageb)
+					if err != nil {
+						message = "[failed to decode encrypted message]"
+					}
+				}
+			}
+
+			paymentData.Description = metadata.Description()
+			// paymentData.PayeeImageURL = imagePath or base64?
+			paymentData.PayeeName = lnurlpay.callback.Host
+			paymentData.LnurlPay = &db.LnurlPayInfo{
+				Repeatable:      lnurlpay.repeatable,
+				LNURL:           lnurlpay.lnurl,
+				MetadataHash:    lnurlpay.metadataHash,
+				SuccessPreamble: preamble,
+				SuccessMessage:  message,
+			}
+		}
+	}
+	a.mu.Unlock()
 
 	err = a.breezDB.AddAccountPayment(paymentData, 0, uint64(paymentItem.CreationDate))
 	a.onServiceEvent(data.NotificationEvent{Type: data.NotificationEvent_PAYMENT_SENT})

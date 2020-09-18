@@ -8,25 +8,25 @@ message ChainStatus {
 }
 
 message Account {
-    enum AccountStatus {        
-        DISCONNECTED = 0;        
+    enum AccountStatus {
+        DISCONNECTED = 0;
         PROCESSING_CONNECTION = 1;
         CLOSING_CONNECTION = 2;
         CONNECTED = 3;
     }
     string id = 1;
-    int64 balance = 2;      
+    int64 balance = 2;
     int64 walletBalance = 3;
-    AccountStatus status = 4;   
+    AccountStatus status = 4;
 
-    //maximum payment this node can receive via lightning  
+    //maximum payment this node can receive via lightning
     int64 maxAllowedToReceive = 5;
 
-    //maximum payment this node can pay via lightning    
+    //maximum payment this node can pay via lightning
     int64 maxAllowedToPay = 6;
 
     //The lightning absolute payment amount
-    int64 maxPaymentAmount = 7;   
+    int64 maxPaymentAmount = 7;
 
     //The routing node fee as reflected in the node policy
     int64 routingNodeFee = 8;
@@ -36,7 +36,7 @@ message Account {
     bool enabled = 9;
 
     //maximum chan reserve accross all channels of this account.
-    int64 maxChanReserve = 10;   
+    int64 maxChanReserve = 10;
 
     //The funding transaction id of the channel.
     string channelPoint = 11;
@@ -49,17 +49,17 @@ message Account {
 }
 
 message Payment {
-    enum PaymentType { 
+    enum PaymentType {
         DEPOSIT = 0;
         WITHDRAWAL = 1;
         SENT = 2;
         RECEIVED = 3;
         CLOSED_CHANNEL = 4;
     }
-    
-    PaymentType type = 1;    
+
+    PaymentType type = 1;
     int64 amount = 3;
-    int64 creationTimestamp = 4;    
+    int64 creationTimestamp = 4;
     InvoiceMemo invoiceMemo = 6;
     string redeemTxID = 7;
     string paymentHash = 8;
@@ -73,6 +73,7 @@ message Payment {
     bool isChannelCloseConfimed = 16;
 	string closedChannelTxID = 17;
     bool isKeySend = 18;
+    LnurlPay lnurlPay = 19;
 }
 
 message PaymentsList {
@@ -85,8 +86,8 @@ message PaymentResponse {
 }
 
 message SendWalletCoinsRequest {
-    string address = 1;    
-    int64 satPerByteFee = 2;    
+    string address = 1;
+    int64 satPerByteFee = 2;
 }
 
 message PayInvoiceRequest {
@@ -104,26 +105,29 @@ message InvoiceMemo {
     string description = 1;
     int64 amount = 2;
     string payeeName = 3;
-    string payeeImageURL = 4;    
+    string payeeImageURL = 4;
     string payerName = 5;
     string payerImageURL = 6;
     bool transferRequest = 7;
     int64 expiry = 8;
+    int64 minSendable = 9;
+    int64 maxSendable = 10;
+    bool isLnurlPay = 11;
 }
 
-message Invoice {   
+message Invoice {
     InvoiceMemo memo = 1;
-    bool settled = 2;    
+    bool settled = 2;
     int64 amtPaid = 3;
 }
 
 message NotificationEvent {
     enum NotificationType {
         READY = 0;
-        INITIALIZATION_FAILED = 1;        
-        ACCOUNT_CHANGED = 2;        
+        INITIALIZATION_FAILED = 1;
+        ACCOUNT_CHANGED = 2;
         PAYMENT_SENT = 3;
-        INVOICE_PAID = 4;        
+        INVOICE_PAID = 4;
         LIGHTNING_SERVICE_DOWN = 5;
         FUND_ADDRESS_CREATED = 6;
         FUND_ADDRESS_UNSPENT_CHANGED = 7;
@@ -174,7 +178,7 @@ enum SwapError {
 
 message AddFundError {
     SwapAddressInfo swapAddressInfo = 1;
-    float hoursToUnlock = 2;    
+    float hoursToUnlock = 2;
 }
 
 message FundStatusReply {
@@ -189,13 +193,13 @@ message RemoveFundRequest {
 }
 
 message RemoveFundReply{
-  string txid = 1;  
+  string txid = 1;
   string errorMessage = 2;
 }
 
-message SwapAddressInfo {   
+message SwapAddressInfo {
     string address = 1;
-    string PaymentHash = 2;     
+    string PaymentHash = 2;
     int64 ConfirmedAmount = 3;
     repeated string ConfirmedTransactionIds = 4;
     int64 PaidAmount = 5;
@@ -219,7 +223,7 @@ message CreateRatchetSessionRequest {
 }
 
 message CreateRatchetSessionReply {
-    string sessionID = 1;    
+    string sessionID = 1;
     string secret = 2;
     string pubKey = 3;
 }
@@ -302,6 +306,7 @@ message LNUrlResponse {
     oneof action {
         LNUrlWithdraw withdraw = 1;
         LNURLChannel channel = 2;
+        InvoiceMemo pay = 3;
     }
 }
 
@@ -315,6 +320,14 @@ message LNURLChannel {
     string k1 = 1;
     string callback = 2;
     string uri = 3;
+}
+
+message LnurlPay {
+    string lnurl = 1;
+    bool repeatable = 2;
+    string metadataHash = 3;
+    string successPreamble = 4;
+    string successMessage = 5;
 }
 
 message ReverseSwapRequest {
